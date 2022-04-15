@@ -24,7 +24,7 @@ class UserLogin(UserBase):
 class User(UserBase):
     first_name : str = Field(..., min_length=1, max_length=50)
     last_name : str = Field(..., min_length=1, max_length=50)
-    birth_date: Optional[datetime] = Field(default=None)
+    birth_date: Optional[date] = Field(default=None)
 class UserRegister(User):
     password: str = Field(..., min_length=8)
 
@@ -74,7 +74,9 @@ def login():
     tags=["Users"]
 )
 def users():
-    pass
+    with open("users.json", "r", encoding="utf=8") as f:
+        results = json.loads(f.read())
+        return results
 
 @app.get(
     path="/users/{user_id}",
