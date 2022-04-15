@@ -1,15 +1,14 @@
 #python native
-from dataclasses import field
+import json
 from datetime import date, datetime
 from typing import Optional, List
 from uuid import UUID
-
 
 #pydantic
 from pydantic import BaseModel, EmailStr, Field
 
 #fastapi
-from fastapi import FastAPI
+from fastapi import Body, FastAPI
 from fastapi import status
 
 app = FastAPI()
@@ -25,19 +24,18 @@ class UserLogin(UserBase):
 class User(UserBase):
     first_name : str = Field(..., min_length=1, max_length=50)
     last_name : str = Field(..., min_length=1, max_length=50)
-    birth_date: Optional[date] = Field(default=None)
+    birth_date: Optional[datetime] = Field(default=None)
+class UserRegister(User):
+    password: str = Field(..., min_length=8)
 
 class Tweet(BaseModel):
     tweet_id: UUID = Field(...)
     content: str = Field(..., max_length=256, min_length=1)
-    created_at: datetime = Field(default=date.today)
+    created_at: datetime = Field(default=datetime.now())
     update_at: Optional[datetime] = Field(default=None)
     by: User = Field(...)
 
 #path operations
-@app.get(path="/")
-def home():
-    return {"Twitter API": "working"}
 
 ##Users
 @app.post(
@@ -47,8 +45,16 @@ def home():
     summary="register a User",
     tags=["Users"]
 )
-def signup():
-    pass
+def signup(user: UserRegister = Body(...)):
+    with open("users.json","r+", encoding="utf-8") as f:
+        results = json.loads(f.read())
+        user_dict = user.dict()
+        user_dict["user_id"] = str(user_dict["user_id"])
+        user_dict["birth_date"] = str(user_dict["birth_date"])
+        results.append(user_dict)
+        f.seek(0)
+        f.write(json.dumps(results))
+        return user
 
 @app.post(
     path="/login",
